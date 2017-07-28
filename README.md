@@ -55,6 +55,8 @@ Model Predictive Control handles a 100 millisecond latency which simulates delay
       ```
 
 Another approach is to add another two cost functions (punishing the combination of steering angle `delta` and velocity `v` as well as the combination of steering angle `delta` and acceleration `a`) besides the cost fucntions suggested in the course (penalizing CTE, epsi, distance to reference velocity, change in `delta` and `a`). 
+
+
       ```
       for (int i = 0; i < N - 1; i++) 
       {
@@ -78,7 +80,7 @@ Another approach is to add another two cost functions (punishing the combination
 
 
 
-[Video](https://youtu.be/DhYBeOVQ70k)
+[Output video](https://youtu.be/DhYBeOVQ70k)
 [![ScreenShot](./image/mpc.png)](https://youtu.be/4Gzh-F4DBms)
 
 ---
