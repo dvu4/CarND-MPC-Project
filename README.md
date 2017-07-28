@@ -80,7 +80,7 @@ Another approach is to add another two cost functions (punishing the combination
 
 
 
-[Output video](https://youtu.be/DhYBeOVQ70k)
+[Output video](https://youtu.be/4Gzh-F4DBms)
 [![ScreenShot](./image/mpc.png)](https://youtu.be/4Gzh-F4DBms)
 
 ---
