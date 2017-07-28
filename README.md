@@ -3,6 +3,87 @@ Self-Driving Car Engineer Nanodegree Program
 
 ---
 
+
+## The Model
+
+In this project, the vehicle dynamics is simplified as the kinematic model which ignores tire forces, gravity and mass. The kinematic model is implemented in the following equations
+
+![model](./image/model.png)
+
+where `(x, y)` is vehicle's coordinates, `psi` is orientation angle and `v` is velocity. Another states of the model are cross track error (`cte`) and orientation error (`epsi`). Acceleration (`a`) and steering angle (`delta`) are actuator outputs. `Lf` measures the distance between the front of the vehicle and its center of gravity (the larger the vehicle, the slower the turn rate). This model calculates the state of the current timestep based on the state and actuations of the previous timestep. 
+
+
+
+## Timestep Length and Elapsed Duration (N & dt)
+
+N (Timestep Length) and dt (Elapsed Duration) are selected empirically to get the car drive up to 80 mph. I chose N = 10 and dt = 0.1 to solve the optimizer to get the car follow the target trajectory. Another values for N/dt attempted include 20/0.05, 10/0.05 , ... but they do not result in good performance.
+
+
+
+
+## Polynomial Fitting and MPC Preprocessing : A polynomial is fitted to waypoints. If the student preprocesses waypoints, the vehicle state, and/or actuators prior to the MPC procedure it is described.
+
+The waypoints are preprocessed by transforming them into the vehicle's coordinates. This simplifies the process to fit a polynomial to the waypoints because the vehicle's x and y coordinates are now at the origin (0, 0) and the orientation angle is also zero.
+
+          ```
+          //waypoints in vehicle coordinates
+          Eigen::VectorXd pts_x(ptsx.size());
+          Eigen::VectorXd pts_y(ptsx.size());
+
+          // transform waypoints, consider px = 0, py = 0, psi = 0
+          for (int i = 0; i < ptsx.size(); i++){
+            double dx = ptsx[i] - px;
+            double dy = ptsy[i] - py;
+            pts_x[i] = (dx * cos(-psi) - dy * sin(-psi));
+            pts_y[i] = (dx * sin(-psi) + dy * cos(-psi));
+          }
+
+          ```
+## Model Predictive Control with Latency 
+
+Model Predictive Control handles a 100 millisecond latency which simulates delay between processing and sensors. One approach to deal with this delay is to change the update equations of actuator for acceleration (`a`) and steering angle (`delta`) 
+
+      ```
+      AD<double> a0     = vars[a_start + t - 1];
+      AD<double> delta0 = vars[delta_start + t - 1];
+
+
+      if (t > 1) {   // use previous actuations (to account for latency)
+        a0     = vars[a_start + t - 2];
+        delta0 = vars[delta_start + t - 2];
+      }
+      ```
+
+Another approach is to add another two cost functions (punishing the combination of steering angle `delta` and velocity `v` as well as the combination of steering angle `delta` and acceleration `a`) besides the cost fucntions suggested in the course (penalizing CTE, epsi, distance to reference velocity, change in `delta` and `a`). 
+      ```
+      for (int i = 0; i < N - 1; i++) 
+      {
+        fg[0] += k_steering * CppAD::pow(vars[delta_start + i], 2);
+        fg[0] += k_throttle * CppAD::pow(vars[a_start + i], 2);
+        fg[0] += k_steering_speed * CppAD::pow(vars[delta_start + i] * vars[a_start+i], 2);
+        // try adding penalty for speed + steer
+        fg[0] += k_steering_speed * CppAD::pow(vars[delta_start + i] * vars[v_start+i], 2);
+      }
+      ```
+
+
+      ```
+      for (int i = 0; i < N - 2; i++) 
+      {
+        fg[0] += k_diff_steering * CppAD::pow(vars[delta_start + i + 1] - vars[delta_start + i], 2);
+        fg[0] += k_diff_throttle * CppAD::pow(vars[a_start + i + 1] - vars[a_start + i], 2);
+      }
+      ```
+
+
+
+
+[Video](https://youtu.be/DhYBeOVQ70k)
+[![ScreenShot](./image/mpc.png)](https://youtu.be/4Gzh-F4DBms)
+
+---
+
+
 ## Dependencies
 
 * cmake >= 3.5
